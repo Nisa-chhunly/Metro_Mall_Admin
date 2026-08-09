@@ -1,8 +1,13 @@
-import { useState } from "react";
 import { ImagePlus } from "lucide-react";
 
-// Example ImageUploader.jsx
-const ImageUploader = ({ id, label, onChange }) => {
+const ImageUploader = ({ id = "image-upload", label = "Upload Image", onImageChange }) => {
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file && onImageChange) {
+      onImageChange(file); // Pass the raw File object directly
+    }
+  };
+
   return (
     <div>
       <label htmlFor={id} className="font-medium text-gray-700 block mb-2">
@@ -12,7 +17,7 @@ const ImageUploader = ({ id, label, onChange }) => {
         id={id}
         type="file"
         accept="image/*"
-        onChange={onChange} // <--- Make sure onChange is passed here!
+        onChange={handleFileChange}
         className="w-full border rounded-lg p-2"
       />
     </div>

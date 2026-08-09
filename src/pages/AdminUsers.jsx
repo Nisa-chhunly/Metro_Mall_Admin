@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import DashboardLayout from "../layout/DashboardLayout";
 import { 
-  Pencil, Trash2, ShieldCheck, Shield, User, Plus, X, Eye, EyeOff 
+  Pencil, Trash2, ShieldCheck, Shield, User, Plus, X 
 } from "lucide-react";
 
 const initialUsers = [
@@ -9,8 +9,7 @@ const initialUsers = [
     id: 1,
     name: "Alex Donovan",
     email: "alex@metromall.com",
-    username: "admin",
-    password: "1234",
+    username: "alex_donovan",
     role: "Super Admin",
     permissions: ["All permissions"],
     status: "Active",
@@ -22,8 +21,7 @@ const initialUsers = [
     id: 2,
     name: "Sarah Thompson",
     email: "sarah.t@metromall.com",
-    username: "Manager",
-    password: "6666",
+    username: "sarah_mgr",
     role: "Manager",
     permissions: ["Products", "Orders", "Customers", "Reports"],
     status: "Active",
@@ -35,8 +33,7 @@ const initialUsers = [
     id: 3,
     name: "Mike Reynolds",
     email: "mike.r@metromall.com",
-    username: "Staff",
-    password: "9999",
+    username: "mike_staff",
     role: "Staff",
     permissions: ["Orders", "Customers", "Messages"],
     status: "Active",
@@ -48,10 +45,9 @@ const initialUsers = [
     id: 4,
     name: "Jennifer Park",
     email: "jennifer.p@metromall.com",
-    username: "Jennifer",
-    password: "7777",
+    username: "jennifer_mgr",
     role: "Manager",
-    permissions: ["Products", "Orders", "Cms", "Stock"],
+    permissions: ["Products", "Orders", "CMS", "Reviews", "Stock"],
     status: "Active",
     lastLogin: "Jul 20, 2026 · 8:55 AM",
     avatarBg: "bg-amber-100 text-amber-700",
@@ -61,10 +57,9 @@ const initialUsers = [
     id: 5,
     name: "Dev Account",
     email: "dev@metromall.com",
-    username: "Dev",
-    password: "8888",
+    username: "dev_admin",
     role: "Staff",
-    permissions: ["Products", "Orders"],
+    permissions: ["Products", "Gallery"],
     status: "Inactive",
     lastLogin: "Jun 15, 2026 · 2:10 PM",
     avatarBg: "bg-rose-100 text-rose-600",
@@ -73,58 +68,33 @@ const initialUsers = [
 ];
 
 const availablePermissions = [
-  "Products", "Orders", "Customers", "Promotions", "Cms",
-  "Stock", "Messages", "Categories", "Reports", "Settings"
+  "Products", "Orders", "Customers",
+  "Reviews", "Promotions", "Cms",
+  "Stock", "Messages", "Gallery",
+  "Settings", "Reports"
 ];
 
 const AdminUsers = () => {
-  // Using 'adminUsers_v3' key to ensure browser cache refreshes to match screenshot
-  const [users, setUsers] = useState(() => {
-    const savedUsers = localStorage.getItem("adminUsers_v3");
-    return savedUsers ? JSON.parse(savedUsers) : initialUsers;
-  });
-
+  const [users, setUsers] = useState(initialUsers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  
-  // Visibility Toggles
-  const [showFormPassword, setShowFormPassword] = useState(false);
-  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const saveUsers = (updatedUsers) => {
-    setUsers(updatedUsers);
-    localStorage.setItem("adminUsers_v3", JSON.stringify(updatedUsers));
-  };
-
-  // Form State
   const [formData, setFormData] = useState({
-    id: "",
     name: "",
     username: "",
     email: "",
-    password: "",
     role: "Staff",
     status: "Active",
     permissions: [],
   });
 
-  // Dynamic Role Counters
-  const counts = {
-    superAdmin: users.filter((u) => u.role === "Super Admin").length,
-    manager: users.filter((u) => u.role === "Manager").length,
-    staff: users.filter((u) => u.role === "Staff").length,
-  };
-
-  // Open Edit Modal
   const handleEdit = (user) => {
     setCurrentUser(user);
-    setShowFormPassword(false);
     setFormData({
-      id: user.id,
       name: user.name,
       username: user.username,
       email: user.email,
-      password: "", // Keep blank unless changing password
       role: user.role,
       status: user.status,
       permissions: user.permissions.includes("All permissions") 
@@ -134,16 +104,12 @@ const AdminUsers = () => {
     setIsModalOpen(true);
   };
 
-  // Open Add Modal
   const handleAddUser = () => {
     setCurrentUser(null);
-    setShowFormPassword(false);
     setFormData({
-      id: "Auto-generated",
       name: "",
       username: "",
       email: "",
-      password: "",
       role: "Staff",
       status: "Active",
       permissions: ["Products"],
@@ -151,65 +117,54 @@ const AdminUsers = () => {
     setIsModalOpen(true);
   };
 
-  // Toggle Table Password Visibility
-  const toggleTablePassword = (id) => {
-    setVisiblePasswords((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  // Toggle Permissions Checkbox
   const togglePermission = (perm) => {
     setFormData((prev) => {
       const exists = prev.permissions.includes(perm);
-      return {
-        ...prev,
-        permissions: exists
-          ? prev.permissions.filter((p) => p !== perm)
-          : [...prev.permissions, perm],
-      };
+      if (exists) {
+        return { ...prev, permissions: prev.permissions.filter((p) => p !== perm) };
+      } else {
+        return { ...prev, permissions: [...prev.permissions, perm] };
+      }
     });
   };
 
-  // Save Changes
   const handleSave = (e) => {
     e.preventDefault();
+    
+    // Automatically set Super Admin permissions
+    const finalPermissions = formData.role === "Super Admin" 
+      ? ["All permissions"] 
+      : formData.permissions;
 
     if (currentUser) {
-      // Edit Mode
-      const updatedUsers = users.map((u) => {
-        if (u.id === currentUser.id) {
-          return {
-            ...u,
-            ...formData,
-            id: currentUser.id,
-            password: formData.password ? formData.password : u.password,
-          };
-        }
-        return u;
-      });
-      saveUsers(updatedUsers);
+      setUsers(users.map((u) => u.id === currentUser.id ? { ...u, ...formData, permissions: finalPermissions } : u));
+      showSuccessAlert("User updated successfully!");
     } else {
-      // Add Mode
       const newUser = {
         id: Date.now(),
         ...formData,
+        permissions: finalPermissions,
         lastLogin: "Never",
         avatarBg: "bg-emerald-100 text-emerald-700",
         initials: formData.name ? formData.name.substring(0, 2).toUpperCase() : "AU",
       };
-      saveUsers([...users, newUser]);
+      setUsers([...users, newUser]);
+      showSuccessAlert("New user created successfully!");
     }
-
     setIsModalOpen(false);
   };
 
-  // Delete User
+  const showSuccessAlert = (message) => {
+    setSuccessMessage(message);
+    setTimeout(() => {
+      setSuccessMessage("");
+    }, 3500);
+  };
+
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
-      const updatedUsers = users.filter((u) => u.id !== id);
-      saveUsers(updatedUsers);
+      setUsers(users.filter((u) => u.id !== id));
+      showSuccessAlert("User deleted successfully!");
     }
   };
 
@@ -217,6 +172,12 @@ const AdminUsers = () => {
     <DashboardLayout>
       <div className="p-8 bg-slate-50/50 min-h-screen text-slate-700">
         
+        {successMessage && (
+          <div className="mb-6 w-full bg-emerald-50 border border-emerald-200 text-[#00a86b] font-semibold text-xs py-3 px-4 rounded-xl text-center transition-all animate-in fade-in duration-200">
+            {successMessage}
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -225,20 +186,22 @@ const AdminUsers = () => {
           </div>
           <button
             onClick={handleAddUser}
-            className="bg-[#00a86b] hover:bg-[#008f5b] text-white px-4 py-2.5 rounded-xl font-medium text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
+            className="bg-[#00a86b] hover:bg-[#008f5b] text-white px-4 py-2.5 rounded-xl font-medium text-xs flex items-center gap-2 shadow-sm transition"
           >
             <Plus className="w-4 h-4" /> Add Admin User
           </button>
         </div>
 
-        {/* Dynamic Summary Cards */}
+        {/* Top Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-slate-900">{counts.superAdmin}</div>
+              <div className="text-2xl font-bold text-slate-900">
+                {users.filter(u => u.role === "Super Admin").length}
+              </div>
               <div className="text-xs font-bold text-purple-600">Super Admin</div>
               <div className="text-[11px] text-slate-400">Full system access</div>
             </div>
@@ -249,7 +212,9 @@ const AdminUsers = () => {
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-slate-900">{counts.manager}</div>
+              <div className="text-2xl font-bold text-slate-900">
+                {users.filter(u => u.role === "Manager").length}
+              </div>
               <div className="text-xs font-bold text-blue-600">Manager</div>
               <div className="text-[11px] text-slate-400">Department management</div>
             </div>
@@ -260,26 +225,27 @@ const AdminUsers = () => {
               <User className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-slate-900">{counts.staff}</div>
+              <div className="text-2xl font-bold text-slate-900">
+                {users.filter(u => u.role === "Staff").length}
+              </div>
               <div className="text-xs font-bold text-slate-700">Staff</div>
               <div className="text-[11px] text-slate-400">Limited access</div>
             </div>
           </div>
         </div>
 
-        {/* Table View */}
+        {/* User Table Card */}
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="py-4 px-6">USER ID</th>
                   <th className="py-4 px-6">USER</th>
                   <th className="py-4 px-6">USERNAME</th>
-                  <th className="py-4 px-6">PASSWORD</th>
                   <th className="py-4 px-6">ROLE</th>
                   <th className="py-4 px-6">PERMISSIONS</th>
                   <th className="py-4 px-6">STATUS</th>
+                  <th className="py-4 px-6">LAST LOGIN</th>
                   <th className="py-4 px-6 text-right">ACTIONS</th>
                 </tr>
               </thead>
@@ -287,15 +253,9 @@ const AdminUsers = () => {
                 {users.map((user) => {
                   const displayPerms = user.permissions.slice(0, 3);
                   const extraCount = user.permissions.length - 3;
-                  const isPasswordVisible = visiblePasswords[user.id];
 
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/50 transition">
-                      {/* User ID */}
-                      <td className="py-4 px-6 font-mono font-bold text-slate-400">
-                        #{String(user.id).padStart(3, "0")}
-                      </td>
-
                       {/* User Info */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
@@ -312,20 +272,6 @@ const AdminUsers = () => {
                       {/* Username */}
                       <td className="py-4 px-6 text-slate-500 font-medium">
                         @{user.username}
-                      </td>
-
-                      {/* Password Column */}
-                      <td className="py-4 px-6 font-mono text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <span>{isPasswordVisible ? user.password : "••••"}</span>
-                          <button
-                            type="button"
-                            onClick={() => toggleTablePassword(user.id)}
-                            className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                          >
-                            {isPasswordVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
                       </td>
 
                       {/* Role Badge */}
@@ -377,19 +323,24 @@ const AdminUsers = () => {
                         </span>
                       </td>
 
+                      {/* Last Login */}
+                      <td className="py-4 px-6 text-slate-400 text-[11px]">
+                        {user.lastLogin}
+                      </td>
+
                       {/* Actions */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEdit(user)}
-                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition cursor-pointer"
+                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           {user.role !== "Super Admin" && (
                             <button
                               onClick={() => handleDelete(user.id)}
-                              className="p-1.5 hover:bg-rose-50 text-rose-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
+                              className="p-1.5 hover:bg-rose-50 text-rose-400 hover:text-rose-600 rounded-lg transition"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -404,38 +355,27 @@ const AdminUsers = () => {
           </div>
         </div>
 
-        {/* MODAL FORM */}
+        {/* EDIT / ADD MODAL */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-xl rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               
+              {/* Modal Header */}
               <div className="p-6 pb-2 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-slate-900">
                   {currentUser ? "Edit User" : "Add New User"}
                 </h2>
                 <button
-                  type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
+              {/* Modal Form */}
               <form onSubmit={handleSave} className="p-6 pt-2 space-y-4">
                 
-                {/* User ID Field (Read-only) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">User ID</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={formData.id}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-mono text-xs cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Full Name & Username */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
@@ -459,45 +399,17 @@ const AdminUsers = () => {
                   </div>
                 </div>
 
-                {/* Email & Password */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#00a86b]"
-                    />
-                  </div>
-
-                  {/* Password Input Field */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      {currentUser ? "New Password (Optional)" : "Password"}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showFormPassword ? "text" : "password"}
-                        required={!currentUser}
-                        placeholder={currentUser ? "Leave blank to keep same" : "Enter password"}
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full pl-3.5 pr-10 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#00a86b]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowFormPassword(!showFormPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#00a86b]"
+                  />
                 </div>
 
-                {/* Role & Status */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Role</label>
@@ -524,7 +436,6 @@ const AdminUsers = () => {
                   </div>
                 </div>
 
-                {/* Permissions */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-2">Permissions</label>
                   <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
@@ -543,7 +454,7 @@ const AdminUsers = () => {
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            onChange={() => {}} 
+                            readOnly
                             className="w-3.5 h-3.5 accent-[#00a86b] rounded cursor-pointer"
                           />
                           <span className="text-xs font-medium">{perm}</span>
@@ -553,22 +464,22 @@ const AdminUsers = () => {
                   </div>
                 </div>
 
-                {/* Modal Buttons */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-[#00a86b] hover:bg-[#008f5b] text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer"
+                    className="px-5 py-2 bg-[#00a86b] hover:bg-[#008f5b] text-white rounded-xl text-xs font-semibold shadow-sm transition"
                   >
                     Save User
                   </button>
                 </div>
+
               </form>
             </div>
           </div>

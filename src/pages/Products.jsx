@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { FaEdit, FaTrash, FaPlus, FaDownload, FaSearch, FaTimes } from "react-icons/fa";
+import { 
+  FaEdit, 
+  FaTrash, 
+  FaPlus, 
+  FaDownload, 
+  FaSearch, 
+  FaTimes, 
+  FaExclamationTriangle 
+} from "react-icons/fa";
 import DashboardLayout from "../layout/DashboardLayout";
 export default function Products() {
   // 1. Initial Products Data State
@@ -15,7 +23,7 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Modal & Form States
+  // Modal & Form States (Add/Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
@@ -25,6 +33,10 @@ export default function Products() {
     stock: "",
     image: "",
   });
+
+  // Custom Delete Modal States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
   // ----------------------------------------------------
   // 📥 Export CSV Logic
@@ -69,12 +81,6 @@ export default function Products() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter((p) => p.id !== id));
-    }
-  };
-
   const handleSave = (e) => {
     e.preventDefault();
     if (!formData.name) return;
@@ -111,6 +117,22 @@ export default function Products() {
   };
 
   // ----------------------------------------------------
+  // 🗑️ Custom Delete Modal Logic
+  // ----------------------------------------------------
+  const handleOpenDeleteModal = (product) => {
+    setProductToDelete(product);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = () => {
+    if (productToDelete) {
+      setProducts(products.filter((p) => p.id !== productToDelete.id));
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+    }
+  };
+
+  // ----------------------------------------------------
   // 🔍 Filter & Search Logic
   // ----------------------------------------------------
   const filteredProducts = products.filter((product) => {
@@ -136,7 +158,6 @@ export default function Products() {
 
         {/* Action Buttons (Export CSV + Add Product) */}
         <div className="flex items-center gap-2">
-          {/* 1. Export CSV Button */}
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition shadow-sm"
@@ -144,7 +165,6 @@ export default function Products() {
             <FaDownload className="text-[10px] text-slate-500" /> Export CSV
           </button>
 
-          {/* 2. Add Product Button */}
           <button
             onClick={handleOpenAddModal}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-[#00c58a] hover:bg-[#00b07b] text-white rounded-lg text-xs font-semibold transition shadow-sm"
@@ -237,7 +257,7 @@ export default function Products() {
                           <FaEdit className="text-[10px]" /> Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(product.id)}
+                          onClick={() => handleOpenDeleteModal(product)}
                           className="flex items-center gap-1 text-red-500 hover:text-red-600 font-medium text-xs"
                         >
                           <FaTrash className="text-[10px]" /> Delete
@@ -355,6 +375,46 @@ export default function Products() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔴 Professional Custom Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center transform transition-all animate-in fade-in zoom-in duration-150">
+            {/* Red Warning Icon */}
+            <div className="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+              <FaExclamationTriangle className="text-2xl" />
+            </div>
+
+            {/* Modal Text Content */}
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-slate-800">Delete Product?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to delete{" "}
+                <span className="font-bold text-slate-700">"{productToDelete?.name}"</span>? 
+                This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Modal Action Buttons */}
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-2.5 text-xs font-semibold border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeDelete}
+                className="flex-1 py-2.5 text-xs font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition shadow-sm"
+              >
+                Delete Product
+              </button>
+            </div>
           </div>
         </div>
       )}

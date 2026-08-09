@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { FaEdit, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
+import { 
+  FaEdit, 
+  FaTrash, 
+  FaPlus, 
+  FaTimes, 
+  FaExclamationTriangle 
+} from "react-icons/fa";
 import DashboardLayout from "../layout/DashboardLayout";
 export default function Categories() {
   // 1. ព័ត៌មានដើម Categories
@@ -14,7 +20,7 @@ export default function Categories() {
     { id: 8, name: "Toys & Hobbies", slug: "/toys", count: 172, status: "Active", image: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=400&auto=format&fit=crop&q=80" },
   ]);
 
-  // Modal States
+  // Modal States (Add/Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
@@ -25,6 +31,10 @@ export default function Categories() {
     count: "",
     image: "",
   });
+
+  // Custom Delete Modal States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   // បើក Modal សម្រាប់ Add
   const handleOpenAddModal = () => {
@@ -45,10 +55,19 @@ export default function Categories() {
     setIsModalOpen(true);
   };
 
-  // លុប Category
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      setCategories(categories.filter((item) => item.id !== id));
+  // ----------------------------------------------------
+  // 🗑️ Custom Delete Modal Logic
+  // ----------------------------------------------------
+  const handleOpenDeleteModal = (category) => {
+    setCategoryToDelete(category);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = () => {
+    if (categoryToDelete) {
+      setCategories(categories.filter((item) => item.id !== categoryToDelete.id));
+      setIsDeleteModalOpen(false);
+      setCategoryToDelete(null);
     }
   };
 
@@ -86,12 +105,12 @@ export default function Categories() {
 
   return (
     <DashboardLayout>
-    <div className="space-y-4">
-      {/* Header Bar */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">Categories</h1>
-          <p className="text-xs text-slate-500">{categories.length} total categories</p>
+      <div className="space-y-4">
+        {/* Header Bar */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">Categories</h1>
+            <p className="text-xs text-slate-500">{categories.length} total categories</p>
         </div>
         
         {/* ប៊ូតុង Add Category */}
@@ -142,7 +161,7 @@ export default function Categories() {
                 </button>
 
                 <button
-                  onClick={() => handleDelete(category.id)}
+                  onClick={() => handleOpenDeleteModal(category)}
                   className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition"
                 >
                   <FaTrash className="text-xs" />
@@ -153,7 +172,7 @@ export default function Categories() {
         ))}
       </div>
 
-      {/* Modal Popup (ដូចរូបភាព ១០០%) */}
+      {/* Add / Edit Category Modal Popup */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
@@ -243,6 +262,46 @@ export default function Categories() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔴 Professional Custom Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center transform transition-all animate-in fade-in zoom-in duration-150">
+            {/* Red Warning Icon */}
+            <div className="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+              <FaExclamationTriangle className="text-2xl" />
+            </div>
+
+            {/* Modal Text Content */}
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-slate-800">Delete Category?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to delete{" "}
+                <span className="font-bold text-slate-700">"{categoryToDelete?.name}"</span>? 
+                This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Modal Action Buttons */}
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-2.5 text-xs font-semibold border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeDelete}
+                className="flex-1 py-2.5 text-xs font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition shadow-sm"
+              >
+                Delete Category
+              </button>
+            </div>
           </div>
         </div>
       )}

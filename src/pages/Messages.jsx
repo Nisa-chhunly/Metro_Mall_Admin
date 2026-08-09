@@ -6,11 +6,10 @@ import {
   Trash2,
   Clock,
   Phone,
-  User,
   Send,
-  CheckCircle2,
   AlertCircle,
-  Filter,
+  CornerUpLeft,
+  X,
 } from "lucide-react";
 import DashboardLayout from "../layout/DashboardLayout";
 
@@ -26,6 +25,7 @@ const initialMessages = [
     date: "2026-08-02T14:30:00",
     status: "Unread", // Unread, Replied, Pending
     priority: "High",
+    replies: [],
   },
   {
     id: 2,
@@ -38,6 +38,7 @@ const initialMessages = [
     date: "2026-08-01T09:15:00",
     status: "Pending",
     priority: "High",
+    replies: [],
   },
   {
     id: 3,
@@ -50,6 +51,13 @@ const initialMessages = [
     date: "2026-07-30T16:45:00",
     status: "Replied",
     priority: "Normal",
+    replies: [
+      {
+        id: 101,
+        text: "Hi Dara,\n\nThank you for reaching out! You can connect directly with our Procurement Lead at procurement@metromall.com.\n\nBest,\nMetroMall Support Team",
+        date: "2026-07-30T17:10:00",
+      },
+    ],
   },
 ];
 
@@ -59,6 +67,9 @@ export default function Messages() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [replyText, setReplyText] = useState("");
+  
+  // State for Delete Warning Modal
+  const [deleteId, setDeleteId] = useState(null);
 
   const activeMessage = useMemo(
     () => messages.find((m) => m.id === selectedId) || messages[0],
@@ -78,7 +89,6 @@ export default function Messages() {
 
   const handleSelectMessage = (msg) => {
     setSelectedId(msg.id);
-    // Automatically mark as read when opened
     if (msg.status === "Unread") {
       setMessages((prev) =>
         prev.map((m) => (m.id === msg.id ? { ...m, status: "Pending" } : m))
@@ -86,25 +96,50 @@ export default function Messages() {
     }
   };
 
-  const handleDelete = (id) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-    if (selectedId === id) {
-      const remaining = messages.filter((m) => m.id !== id);
+  // Trigger Warning Dialog
+  const promptDelete = (id) => {
+    setDeleteId(id);
+  };
+
+  // Perform Delete Action after Confirmation
+  const confirmDelete = () => {
+    if (!deleteId) return;
+
+    setMessages((prev) => prev.filter((m) => m.id !== deleteId));
+    if (selectedId === deleteId) {
+      const remaining = messages.filter((m) => m.id !== deleteId);
       if (remaining.length > 0) setSelectedId(remaining[0].id);
     }
+    setDeleteId(null);
+  };
+
+  const handlePrefillReply = () => {
+    setReplyText(`Hi ${activeMessage.name},\n\n`);
   };
 
   const handleSendReply = (e) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || !activeMessage) return;
+
+    const newReply = {
+      id: Date.now(),
+      text: replyText.trim(),
+      date: new Date().toISOString(),
+    };
 
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === activeMessage.id ? { ...m, status: "Replied" } : m
+        m.id === activeMessage.id
+          ? {
+              ...m,
+              status: "Replied",
+              replies: [...(m.replies || []), newReply],
+            }
+          : m
       )
     );
+
     setReplyText("");
-    alert(`Reply sent successfully to ${activeMessage.email}`);
   };
 
   return (
@@ -136,7 +171,7 @@ export default function Messages() {
         {/* Main Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start h-[calc(100vh-220px)] min-h-[600px]">
           
-          {/* Left Panel: Message List (4 Columns) */}
+          {/* Left Panel: Message List */}
           <div className="lg:col-span-5 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-full overflow-hidden">
             {/* Search and Filters */}
             <div className="p-4 border-b border-gray-100 space-y-3 bg-gray-50/50">
@@ -250,7 +285,7 @@ export default function Messages() {
             </div>
           </div>
 
-          {/* Right Panel: Detailed View & Reply (7 Columns) */}
+          {/* Right Panel: Detailed View & Reply */}
           <div className="lg:col-span-7 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-full overflow-hidden">
             {activeMessage ? (
               <>
@@ -269,7 +304,17 @@ export default function Messages() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleDelete(activeMessage.id)}
+                      onClick={handlePrefillReply}
+                      className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
+                      title="Reply"
+                    >
+                      <CornerUpLeft size={16} />
+                      <span className="hidden sm:inline">Reply</span>
+                    </button>
+
+                    {/* Delete Trigger Button */}
+                    <button
+                      onClick={() => promptDelete(activeMessage.id)}
                       className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete Inquiry"
                     >
@@ -278,9 +323,8 @@ export default function Messages() {
                   </div>
                 </div>
 
-                {/* Message Body Content */}
+                {/* Message Thread Body Content */}
                 <div className="p-6 flex-1 overflow-y-auto space-y-6">
-                  {/* Sender Profile Header */}
                   <div className="flex items-start justify-between border-b border-gray-100 pb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
@@ -302,25 +346,58 @@ export default function Messages() {
                     </div>
                   </div>
 
-                  {/* Subject */}
                   <div>
                     <h3 className="text-base font-bold text-gray-900">
                       {activeMessage.subject}
                     </h3>
                   </div>
 
-                  {/* Full Message Text */}
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 text-xs text-gray-700 leading-relaxed whitespace-pre-line">
                     {activeMessage.message}
                   </div>
+
+                  {activeMessage.replies && activeMessage.replies.length > 0 && (
+                    <div className="space-y-4 pt-2 border-t border-gray-100">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Response History
+                      </h4>
+                      {activeMessage.replies.map((reply) => (
+                        <div
+                          key={reply.id}
+                          className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-100 text-xs text-gray-800 leading-relaxed space-y-2"
+                        >
+                          <div className="flex justify-between items-center text-[10px] text-emerald-700 font-semibold">
+                            <span>MetroMall Support Team</span>
+                            <span>
+                              {new Date(reply.date).toLocaleString("en-US", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })}
+                            </span>
+                          </div>
+                          <div className="whitespace-pre-line">{reply.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Quick Reply Form */}
                 <div className="p-4 border-t border-gray-100 bg-gray-50/30">
                   <form onSubmit={handleSendReply} className="space-y-3">
-                    <label className="text-xs font-semibold text-gray-700 block">
-                      Quick Response to {activeMessage.name}
-                    </label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-gray-700 block">
+                        Quick Response to {activeMessage.name}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handlePrefillReply}
+                        className="text-[11px] text-emerald-600 hover:underline font-medium"
+                      >
+                        Insert Greeting
+                      </button>
+                    </div>
+
                     <textarea
                       rows={3}
                       value={replyText}
@@ -335,7 +412,8 @@ export default function Messages() {
                       </span>
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                        disabled={!replyText.trim()}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
                       >
                         <Send size={13} /> Send Reply
                       </button>
@@ -353,6 +431,42 @@ export default function Messages() {
 
         </div>
       </div>
+
+      {/* Delete Confirmation Warning Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm">Delete Message</h3>
+                <p className="text-xs text-gray-500">
+                  Are you sure you want to delete this message? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteId(null)}
+                className="px-3 py-2 border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

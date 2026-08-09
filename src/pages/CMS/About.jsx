@@ -1,189 +1,179 @@
-import { useState, useEffect } from "react";
-import Button from "../../components/Button";
-import ImageUploader from "../../components/ImageUploader";
+import { useState } from "react";
 import DashboardLayout from "../../layout/DashboardLayout";
+import Button from "../../components/Button";
+
+// SVG Icon Components for Social Links
+const FacebookIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.891h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+  </svg>
+);
+
+const TwitterIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const InstagramIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+  </svg>
+);
+
+const YoutubeIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  </svg>
+);
+
+const INITIAL_FORM = {
+  aboutTitle: "About MetroMall",
+  aboutDescription:
+    "Your trusted online supermarket offering fresh groceries, electronics, and household essentials delivered to your doorstep.",
+};
 
 const About = () => {
-  const [about, setAbout] = useState({
-    title: "",
-    description: "",
-    image: null,
-  });
-
-  const [previewImage, setPreviewImage] = useState(null);
+  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [statusMessage, setStatusMessage] = useState(null);
 
   const handleChange = (e) => {
-    setAbout({
-      ...about,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // Safe handler for ImageUploader (handles direct file or standard event)
-  const handleImageChange = (fileOrEvent) => {
-    let file = null;
-
-    if (fileOrEvent?.target?.files) {
-      file = fileOrEvent.target.files[0];
-    } else if (fileOrEvent instanceof File) {
-      file = fileOrEvent;
-    }
-
-    if (file) {
-      setAbout((prev) => ({
-        ...prev,
-        image: file,
-      }));
-      setPreviewImage(URL.createObjectURL(file));
-    }
+  const handleReset = () => {
+    setFormData(INITIAL_FORM);
+    setStatusMessage({ type: "info", text: "Reset to default About section." });
+    setTimeout(() => setStatusMessage(null), 3000);
   };
-
-  // Cleanup object URL to avoid memory leaks
-  useEffect(() => {
-    return () => {
-      if (previewImage) {
-        URL.revokeObjectURL(previewImage);
-      }
-    };
-  }, [previewImage]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(about);
-    alert("About section updated successfully!");
+    setStatusMessage({ type: "success", text: "About section saved successfully!" });
+    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   return (
     <DashboardLayout>
-      <div className="bg-white rounded-xl shadow-md p-6">
-        {/* Page Title */}
-        <div className="mb-6 border-b pb-4">
-          <h1 className="text-2xl font-semibold">About Section Settings</h1>
-          <p className="text-gray-500 text-sm">
-            Update the About information shown on your website's footer.
+      <div className="p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Footer - About Section</h1>
+          <p className="text-gray-500">
+            Manage the About details displayed inside the site footer.
           </p>
         </div>
 
-        {/* 2-Column Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          
-          {/* Left Column: Form Inputs */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
+        {statusMessage && (
+          <div
+            className={`mb-6 p-4 rounded-lg border text-sm flex items-center justify-between ${
+              statusMessage.type === "success"
+                ? "bg-green-100 text-green-800 border-green-200"
+                : "bg-blue-100 text-blue-800 border-blue-200"
+            }`}
+          >
+            <span>{statusMessage.text}</span>
+            <button
+              onClick={() => setStatusMessage(null)}
+              className="font-bold text-xs hover:opacity-75"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+          {/* Settings Form */}
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-xl shadow-lg p-6 space-y-5"
+          >
+            <h2 className="text-xl font-semibold border-b pb-3">
+              About Details
+            </h2>
+
             <div>
-              <label className="block mb-2 font-medium text-gray-700">
-                About Title
-              </label>
+              <label className="block font-medium mb-1">Title</label>
               <input
                 type="text"
-                name="title"
-                value={about.title}
+                name="aboutTitle"
+                value={formData.aboutTitle}
                 onChange={handleChange}
-                placeholder="About MetroMall"
-                className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-green-500 outline-none"
               />
             </div>
 
-            {/* Description */}
             <div>
-              <label className="block mb-2 font-medium text-gray-700">
-                Description
-              </label>
+              <label className="block font-medium mb-1">Description</label>
               <textarea
-                rows="5"
-                name="description"
-                value={about.description}
+                rows={4}
+                name="aboutDescription"
+                value={formData.aboutDescription}
                 onChange={handleChange}
-                placeholder="Write about your company..."
-                className="w-full border rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-green-500 outline-none"
               />
             </div>
 
-            {/* About Image */}
-            <div>
-              <ImageUploader
-                id="aboutImage"
-                label="About Section Image"
-                onChange={handleImageChange}
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                text="Cancel"
-                type="button"
-                className="bg-gray-200 text-gray-700 hover:bg-gray-300"
-              />
+            <div className="flex gap-3 pt-4 border-t">
               <Button text="Save Changes" type="submit" />
+              <Button
+                text="Reset"
+                type="button"
+                color="gray"
+                onClick={handleReset}
+              />
             </div>
           </form>
 
-          {/* Right Column: Footer Live Preview */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 sticky top-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                Footer Preview
-              </h2>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Live
-              </span>
-            </div>
+          {/* Footer Live Preview */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-5 pb-3 border-b">
+              Live Preview (Footer Column)
+            </h2>
 
-            {/* Mock Footer Container */}
-            <div className="bg-emerald-950 text-emerald-100 rounded-lg p-6 shadow-inner space-y-6">
-              
-              {/* Footer Top Column Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-emerald-800/60 pb-6 text-xs">
-                
-                {/* About Column (Dynamic) */}
-                <div className="sm:col-span-2 space-y-3">
-                  <h3 className="font-semibold text-white text-base tracking-wide border-b border-emerald-700/50 pb-1">
-                    {about.title || "About MetroMall"}
-                  </h3>
+            {/* Simulated Footer Column Preview */}
+            <div className="bg-[#0b172a] text-white rounded-2xl p-8 max-w-sm space-y-4">
+              <h3 className="text-base font-bold text-white">{formData.aboutTitle}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                {formData.aboutDescription}
+              </p>
 
-                  {previewImage && (
-                    <img
-                      src={previewImage}
-                      alt="About Preview"
-                      className="w-full h-28 object-cover rounded-md border border-emerald-800"
-                    />
-                  )}
-
-                  <p className="text-emerald-200/80 leading-relaxed break-words whitespace-pre-wrap">
-                    {about.description ||
-                      "Your company description will appear here inside the website footer..."}
-                  </p>
-                </div>
-
-                {/* Dummy Links Column */}
-                <div className="space-y-2 opacity-60">
-                  <h4 className="font-semibold text-white text-xs uppercase tracking-wider">
-                    Quick Links
-                  </h4>
-                  <ul className="space-y-1">
-                    <li className="hover:underline cursor-pointer">Shop Products</li>
-                    <li className="hover:underline cursor-pointer">Promotions</li>
-                    <li className="hover:underline cursor-pointer">Contact Us</li>
-                    <li className="hover:underline cursor-pointer">Privacy Policy</li>
-                  </ul>
-                </div>
-
+              {/* Vector Social Media Icons */}
+              <div className="flex gap-3 pt-2">
+                <a
+                  href="#"
+                  className="w-9 h-9 bg-slate-800 hover:bg-emerald-600 rounded-full flex items-center justify-center text-gray-300 hover:text-white transition"
+                  title="Facebook"
+                >
+                  <FacebookIcon />
+                </a>
+                <a
+                  href="#"
+                  className="w-9 h-9 bg-slate-800 hover:bg-emerald-600 rounded-full flex items-center justify-center text-gray-300 hover:text-white transition"
+                  title="X (Twitter)"
+                >
+                  <TwitterIcon />
+                </a>
+                <a
+                  href="#"
+                  className="w-9 h-9 bg-slate-800 hover:bg-emerald-600 rounded-full flex items-center justify-center text-gray-300 hover:text-white transition"
+                  title="Instagram"
+                >
+                  <InstagramIcon />
+                </a>
+                <a
+                  href="#"
+                  className="w-9 h-9 bg-slate-800 hover:bg-emerald-600 rounded-full flex items-center justify-center text-gray-300 hover:text-white transition"
+                  title="YouTube"
+                >
+                  <YoutubeIcon />
+                </a>
               </div>
-
-              {/* Footer Bottom Line */}
-              <div className="text-center text-[10px] text-emerald-400/60">
-                © {new Date().getFullYear()} MetroMall. All rights reserved.
-              </div>
-
             </div>
-
-            <p className="text-xs text-gray-400 text-center mt-3">
-              This preview reflects how the About section renders in the website footer.
-            </p>
           </div>
-
         </div>
       </div>
     </DashboardLayout>
