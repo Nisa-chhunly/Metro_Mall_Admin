@@ -67,7 +67,7 @@ const Sidebar = () => {
   return (
     <div className="w-72 bg-green-700 text-white min-h-screen flex flex-col">
       {/* Logo */}
-      <div className="p-3 border-b border-green-600">
+      <div className="p-4 border-b border-green-600">
         <h1 className="text-3xl font-bold">MetroMall</h1>
         <p className="text-green-200 text-sm">Admin Panel</p>
       </div>
